@@ -32,6 +32,7 @@ require (
 	github.com/peterbourgon/diskv v2.0.1+incompatible // indirect
 	github.com/pkg/errors v0.8.1 // indirect
 	github.com/prometheus/client_golang v0.9.3 // indirect
+	github.com/prometheus/common v0.4.0
 	github.com/prometheus/procfs v0.0.0-20190521135221-be78308d8a4f // indirect
 	github.com/sirupsen/logrus v1.4.2
 	github.com/spf13/pflag v1.0.3 // indirect
@@ -61,3 +62,5 @@ require (
 	sigs.k8s.io/testing_frameworks v0.1.1 // indirect
 	sigs.k8s.io/yaml v1.1.0 // indirect
 )
+
+replace github.com/argoproj-labs/argo-kube-notifier => github.com/chap-dr/argo-kube-notifier v0.0.0-20200310171754-b5cdadcd10fe
