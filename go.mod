@@ -63,4 +63,4 @@ require (
 	sigs.k8s.io/yaml v1.1.0 // indirect
 )
 
-replace github.com/argoproj-labs/argo-kube-notifier => github.com/chap-dr/argo-kube-notifier v0.0.0-20200310171754-b5cdadcd10fe
+replace github.com/argoproj-labs/argo-kube-notifier => github.com/chap-dr/argo-kube-notifier v0.0.0-d0acbc2dcbe16f6ef3e195f6c105804508e5315f
