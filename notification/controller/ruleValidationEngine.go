@@ -1,10 +1,11 @@
 package controller
 
 import (
+	"strconv"
+
 	"github.com/antchfx/jsonquery"
 	"github.com/argoproj-labs/argo-kube-notifier/pkg/apis/argoproj/v1alpha1"
 	log "github.com/sirupsen/logrus"
-	"strconv"
 )
 
 func ValidateCondition(condition *v1alpha1.Condition, node *jsonquery.Node) bool {

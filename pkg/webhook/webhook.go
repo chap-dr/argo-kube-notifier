@@ -16,8 +16,6 @@ limitations under the License.
 package webhook
 
 import (
-	"fmt"
-
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 )
 
@@ -29,7 +27,6 @@ var AddToManagerFuncs []func(manager.Manager) error
 // +kubebuilder:rbac:groups="",resources=secrets,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups="",resources=services,verbs=get;list;watch;create;update;patch;delete
 func AddToManager(m manager.Manager) error {
-	fmt.Print("\n\n **** CUNT **** \n\n")
 	for _, f := range AddToManagerFuncs {
 		if err := f(m); err != nil {
 			return err

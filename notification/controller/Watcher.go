@@ -2,6 +2,7 @@ package controller
 
 import (
 	"fmt"
+
 	log "github.com/sirupsen/logrus"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -30,44 +31,54 @@ func NewWatcher(resource *schema.GroupVersionResource, objectQueue workqueue.Rat
 }
 
 func (w *Watcher) watch() {
+	fmt.Printf("*DEBUG* 3\n")
 	if w.resource.Resource == "" {
+		fmt.Printf("*DEBUG* 3.1\n")
 		return
 	}
 	for {
+		fmt.Printf("*DEBUG* 3.2\n")
 		err := w.createWatcher()
 		if err != nil {
+			fmt.Printf("*DEBUG* 3.3\n")
 			log.Error(err)
 			break
 
 		}
+		fmt.Printf("*DEBUG* 3.4\n")
 		w.runWatch()
 	}
 }
 
 func (w *Watcher) createWatcher() error {
+	fmt.Printf("*DEBUG* 4\n")
 	config, err := config2.GetConfig()
 	if err != nil {
 		panic(err.Error())
 	}
 	clientset, err := dynamic.NewForConfig(config)
 	if err != nil {
+		fmt.Printf("*DEBUG* 4.1\n")
 		return err
 	}
 	api := clientset.Resource(*w.resource)
 
 	listStruct, err := api.List(v1.ListOptions{})
 	if err != nil || listStruct == nil {
+		fmt.Printf("*DEBUG* 4.2\n")
 		return err
 	}
 	w.lastSyncVersion = listStruct.GetResourceVersion()
 	fmt.Println(w.lastSyncVersion)
-
+	fmt.Printf("*DEBUG* 4.3\n")
 	w.apiWatcher, err = api.
 		Watch(v1.ListOptions{ResourceVersion: w.lastSyncVersion})
 	if err != nil {
+		fmt.Printf("*DEBUG* 4.4\n")
 		log.Fatal(err)
 		return err
 	}
+
 	return nil
 }
 

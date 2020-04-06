@@ -3,12 +3,15 @@ package controller
 import (
 	"bytes"
 	"fmt"
+	"html/template"
+	"strings"
+	"time"
+
 	"github.com/antchfx/jsonquery"
 	"github.com/argoproj-labs/argo-kube-notifier/notification/integration"
 	"github.com/argoproj-labs/argo-kube-notifier/pkg/apis/argoproj/v1alpha1"
 	"github.com/argoproj-labs/argo-kube-notifier/util"
 	log "github.com/sirupsen/logrus"
-	"html/template"
 	apiv1 "k8s.io/api/core/v1"
 	apierr "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -19,8 +22,6 @@ import (
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/util/workqueue"
 	config2 "sigs.k8s.io/controller-runtime/pkg/client/config"
-	"strings"
-	"time"
 )
 
 const DELAY_WATCH_EVENT = "DELAY_WATCH"
@@ -36,7 +37,6 @@ type NewNotificationController struct {
 }
 
 func CreateNewNotificationController(namespace string) NewNotificationController {
-
 	nnc := NewNotificationController{}
 	nnc.ResourceMap = make(map[string]map[string]v1alpha1.Notification)
 	nnc.NotifierMap = make(map[string]map[string]integration.NotifierInterface)
@@ -71,12 +71,14 @@ func (nnc *NewNotificationController) UnRegisterNotification(notification *v1alp
 func (nnc *NewNotificationController) RegisterNotification(notification *v1alpha1.Notification) {
 
 	resourceName := nnc.GenerateMapKey(notification.Spec.MonitorResource)
-
+	fmt.Printf("\n *DEBUG* 1 val1: %v, val2: %v \n", notification.Name, notification.Spec.MonitorResource)
 	if notificationMap, ok := nnc.ResourceMap[resourceName]; ok {
+		fmt.Printf(" *DEBUG* 1.1 val1: %v, val2: %v \n", notification.Name, notification.Spec.MonitorResource)
 		notificationMap[notification.Name] = *notification
 		nnc.ResourceMap[resourceName] = notificationMap
 		nnc.NotifierMap[notification.Name] = nnc.getNotifier(*notification)
 	} else {
+		fmt.Printf(" *DEBUG* 1.2 val1: %v, val2: %v \n", notification.Name, notification.Spec.MonitorResource)
 		notificationMap = map[string]v1alpha1.Notification{}
 		watcher := NewWatcher(&notification.Spec.MonitorResource, nnc.ObjectQueue, "", nnc.ResourceVersionMap)
 		notificationMap[notification.Name] = *notification
@@ -87,18 +89,19 @@ func (nnc *NewNotificationController) RegisterNotification(notification *v1alpha
 }
 
 func (nnc *NewNotificationController) getNotifier(notification v1alpha1.Notification) map[string]integration.NotifierInterface {
-
 	var notifierMap = make(map[string]integration.NotifierInterface)
-
+	fmt.Printf(" *DEBUG* 2\n")
 	for _, notifier := range notification.Spec.Notifier {
 		if notifier.Slack != nil {
+			fmt.Printf(" *DEBUG* 2.1\n")
 			config, err := config2.GetConfig()
 			if err != nil {
-
+				fmt.Printf(" *DEBUG* 2.3\n")
 			}
 			client, err := kubernetes.NewForConfig(config)
 			namespace := "default"
 			if notification.Namespace != "" {
+				fmt.Printf(" *DEBUG* 2.2\n")
 				namespace = notification.Namespace
 			}
 			notifierMap[notifier.Name] = integration.NewSlackClient(client, namespace, notifier.Slack)
@@ -116,6 +119,7 @@ func (nnc *NewNotificationController) getNotifier(notification v1alpha1.Notifica
 			notifierMap[notifier.Name] = integration.NewEmailClient(client, namespace, notifier.Email)
 		}
 	}
+	fmt.Printf(" *DEBUG* 2.4\n")
 	return notifierMap
 }
 
@@ -135,7 +139,6 @@ func (nnc *NewNotificationController) processNextItem() bool {
 	defer nnc.ObjectQueue.Done(object)
 	event := object.(watch.Event)
 	nnc.processObject(event, nnc.GenerateResourceNameKey(event.Object.GetObjectKind().GroupVersionKind()))
-
 	return true
 }
 
@@ -173,7 +176,6 @@ func (nnc *NewNotificationController) processObject(event watch.Event, resourceN
 }
 
 func (nnc *NewNotificationController) processingNotification(event watch.Event, notification v1alpha1.Notification, delayValidation bool) {
-
 	jsonObject, err := json.Marshal(event.Object)
 	if err != nil {
 		log.Error(err)
@@ -186,7 +188,7 @@ func (nnc *NewNotificationController) processRules(jsonByte []byte, notification
 	doc, _ := jsonquery.Parse(strings.NewReader(string(jsonByte)))
 	name := jsonquery.FindOne(doc, "metadata/name")
 	for _, rule := range notification.Spec.Rules {
-
+		log.Debugf("Rule validation begin. NotificationName=%s, Rule=%v", notification.Name, rule)
 		if ValidateRule(&rule, doc) {
 			if rule.InitialDelaySec > 0 && !delayValidation {
 				go nnc.delayTrigger(rule.InitialDelaySec, notification.Spec.MonitorResource, notification.Namespace, name.InnerText())
@@ -196,6 +198,8 @@ func (nnc *NewNotificationController) processRules(jsonByte []byte, notification
 
 			nnc.processEvents(rule.Events, jsonByte, notification.Name)
 
+		} else {
+			log.Errorf("Rule failed to meet condition. Event will be trigger. NotificationName=%s, Rule=%v", notification.Name, rule)
 		}
 
 	}

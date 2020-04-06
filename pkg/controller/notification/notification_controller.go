@@ -17,6 +17,7 @@ package notification
 
 import (
 	"context"
+
 	controller2 "github.com/argoproj-labs/argo-kube-notifier/notification/controller"
 	argoprojv1alpha1 "github.com/argoproj-labs/argo-kube-notifier/pkg/apis/argoproj/v1alpha1"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -98,6 +99,7 @@ type ReconcileNotification struct {
 func (r *ReconcileNotification) Reconcile(request reconcile.Request) (reconcile.Result, error) {
 	// Fetch the Notification instance
 	instance := &argoprojv1alpha1.Notification{}
+
 	err := r.Get(context.TODO(), request.NamespacedName, instance)
 	if err != nil {
 		if errors.IsNotFound(err) {
@@ -107,7 +109,6 @@ func (r *ReconcileNotification) Reconcile(request reconcile.Request) (reconcile.
 		// Error reading the object - requeue the request.
 		return reconcile.Result{}, err
 	}
-
 	r.newController.RegisterNotification(instance)
 
 	//// TODO(user): Change this to be the object type created by your controller
