@@ -1,0 +1,46 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Notification
+metadata:
+  name: notification-1
+spec:
+  monitorResource:
+    Group: extensions
+    Resource: deployments
+    Version: v1beta1
+  Namespace: argo
+  notifiers:
+  - name: slack
+    slack:
+      channel: general
+      hookUrlSecret:
+        key: hookURL
+        name: my-slack-secret
+  rules:
+  - allConditions:
+    - jsonPath: status/readyReplicas
+      operator: ne
+      valueJsonPath: status/replicas
+    events:
+    - emailSubject: Argo Notification Condition Triggered {{.metadata.name}}
+      message: 'Condition Triggered : Deployment = {{.metadata.name}} replicaset doesnt
+        match. Required Replicas = {{.status.replicas}}, Current Replicas={{.status.readyReplicas}}'
+      notificationLevel: warning
+      notifierNames:
+      - slack
+    initialDelaySec: 10
+    name: rule1
+    throttleMinutes: 1
+  - allConditions:
+    - jsonPath: metadata/name
+      operator: ne
+      value: bleh
+    events:
+    - emailSubject: '[ALERT] Argo Notification Condition Triggered {{.metadata.name}}'
+      message: 'Condition Triggered : Deployment ={{.metadata.name}} replicaset doesnt
+        match. Required Replicas = {{.status.replicas}}, Current Replicas={{.status.readyReplicas}}'
+      notificationLevel: critical
+      notifierNames:
+      - slack
+    initialDelaySec: 10
+    name: rule2
+    throttleMinutes: 1
