@@ -55,3 +55,5 @@ spec:
         FromEmailId: sarabala1979@gmail.com
         SenderList:
           - saravanan_balasubramanian@intuit.com
+        initialDelaySec: 60
+        throttleMinutes: 5
