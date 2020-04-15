@@ -1,0 +1,44 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Notification
+metadata:
+  name: tiej-notify
+  namespace: hello-app
+spec:
+  monitorResource:
+    Group: 
+    Resource: events
+    Version: v1
+  Namespace: hello-app
+  notifiers:
+  - name: slack
+    slack:
+      channel: general
+      hookUrlSecret:
+        key: hookURL
+        name: my-slack-secret
+  rules:
+  - anyConditions:
+    - 
+      # All Pod events
+      jsonPath: involvedObject/kind
+      operator: eq
+      value: Pod
+    -
+      # All ReplicaSet events
+      jsonPath: involvedObject/kind
+      operator: eq
+      value: ReplicaSet
+    events:
+        -
+          message: |
+            {{.involvedObject.kind}} event triggered
+            Timestamp: {{.metadata.creationTimestamp}}
+            Reason: {{.reason}}
+            Message: {{.message}}
+            Namespace: {{.involvedObject.namespace}}
+          notificationLevel: info
+          notifierNames:
+            - slack
+    initialDelaySec: 1
+    name: pod-or-replicaset-events
+    throttleMinutes: 1
