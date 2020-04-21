@@ -1,0 +1,53 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Notification
+metadata:
+  name: pod-notifier
+  namespace: hello-app
+spec:
+  monitorResource:
+    Group: 
+    Resource: pods
+    Version: v1
+  Namespace: hello-app
+  notifiers:
+  - name: slack
+    slack:
+      # TODO: Get channel from app conf
+      channel: argo-kube-notifier
+      hookUrlSecret:
+        key: hookURL
+        name: webhook-server-secret
+  rules:
+  - anyConditions:
+    - 
+      # Warn upon status CrashLoopBackOff
+      jsonPath: status/phase
+      operator: eq
+      value: CrashLoopBackOff
+    events:
+        -
+          message: |
+            Pod: {{.metadata.name}}, status: {{ .status.phase }}, restart count: {{ (index .status.containerStatuses 0).restartCount }} .
+          notificationLevel: warning
+          notifierNames:
+            - slack
+    initialDelaySec: 1
+    name: pod-status-CrashLoopBackOff
+    throttleMinutes: 10
+  - anyConditions:
+    - 
+      # Warn upon large number of restartCounts
+      jsonPath: /status/containerStatuses/*/restartCount
+      operator: gt
+      value: "100"
+    events:
+        -
+          message: |
+            Pod restartCount warning. {{.metadata.name}} has been restarted {{ (index .status.containerStatuses 0).restartCount }} times. 
+            {{ range $k, $v := (index .status.containerStatuses 0).state }} Pod state: {{ $k }} {{ end }}
+          notificationLevel: warning
+          notifierNames:
+            - slack
+    initialDelaySec: 1
+    name: pod-restart-count-warning
+    throttleMinutes: 10
