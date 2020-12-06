@@ -1,0 +1,100 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Notification
+metadata:
+  name: event-notifier
+  namespace: hello-app
+spec:
+  monitorResource:
+    Group: 
+    Resource: events
+    Version: v1
+  Namespace: hello-app
+  notifiers:
+  - name: slack
+    slack:
+      # TODO: Get channel from app-conf
+      channel: argo-kube-notifier
+      hookUrlSecret:
+        key: hookURL
+        name: webhook-server-secret
+  rules:
+  - anyConditions:
+    - 
+      # All Pod events
+      jsonPath: involvedObject/kind
+      operator: eq
+      value: Pod
+    events:
+        -
+          message: |
+            {{.involvedObject.kind}} event triggered!
+            Timestamp: {{.metadata.creationTimestamp}}
+            Reason: {{.reason}}
+            Message: {{.message}}
+            Namespace: {{.involvedObject.namespace}}
+          notificationLevel: info
+          notifierNames:
+            - slack
+    initialDelaySec: 1
+    name: pod-events
+    throttleMinutes: 1
+  - anyConditions:
+    - 
+      # All ReplicaSet events
+      jsonPath: involvedObject/kind
+      operator: eq
+      value: ReplicaSet
+    events:
+        -
+          message: |
+            {{.involvedObject.kind}} event triggered!
+            Timestamp: {{.metadata.creationTimestamp}}
+            Reason: {{.reason}}
+            Message: {{.message}}
+            Namespace: {{.involvedObject.namespace}}
+          notificationLevel: info
+          notifierNames:
+            - slack
+    initialDelaySec: 1
+    name: replicaset-events
+    throttleMinutes: 1
+  - anyConditions:
+    - 
+      # All HPA events
+      jsonPath: involvedObject/kind
+      operator: eq
+      value: HorizontalPodAutoscaler
+    events:
+        -
+          message: |
+            {{.involvedObject.kind}} event triggered!
+            Timestamp: {{.metadata.creationTimestamp}}
+            Reason: {{.reason}}
+            Message: {{.message}}
+            Namespace: {{.involvedObject.namespace}}
+          notificationLevel: info
+          notifierNames:
+            - slack
+    initialDelaySec: 1
+    name: hpa-events
+    throttleMinutes: 1
+  - anyConditions:
+    - 
+      # All Deployment events
+      jsonPath: involvedObject/kind
+      operator: eq
+      value: Deployment
+    events:
+        -
+          message: |
+            {{.involvedObject.kind}} event triggered!
+            Timestamp: {{.metadata.creationTimestamp}}
+            Reason: {{.reason}}
+            Message: {{.message}}
+            Namespace: {{.involvedObject.namespace}}
+          notificationLevel: info
+          notifierNames:
+            - slack
+    initialDelaySec: 1
+    name: deployment-events
+    throttleMinutes: 1
